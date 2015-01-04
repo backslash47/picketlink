@@ -4,6 +4,7 @@ import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.model.Account;
 import org.picketlink.idm.model.IdentityType;
 import org.picketlink.idm.model.annotation.StereotypeProperty;
+import org.picketlink.idm.permission.Permission;
 
 import java.lang.reflect.Constructor;
 
@@ -115,6 +116,12 @@ public interface Token {
          * @return An identity type instance of there is any claim from the token referencing it. Otherwise this method returns null.
          */
         <I extends IdentityType> I extractIdentity(T token, Class<I> identityType, StereotypeProperty.Property stereotypeProperty, Object identifier);
+
+        /**
+         * <p>Checks if the given {@link Token} contains specified permission.</p>
+         *
+         */
+        boolean hasPermission(T token, Permission permission);
 
         /**
          * <p>

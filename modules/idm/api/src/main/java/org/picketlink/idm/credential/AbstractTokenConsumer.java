@@ -29,6 +29,7 @@ import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.model.Account;
 import org.picketlink.idm.model.IdentityType;
 import org.picketlink.idm.model.annotation.StereotypeProperty;
+import org.picketlink.idm.permission.Permission;
 
 import java.util.List;
 import java.util.Set;
@@ -65,6 +66,15 @@ public abstract class AbstractTokenConsumer<T extends Token> implements Token.Co
 
         return extractIdentityTypeFromToken(token, identityType, stereotypeProperty, identifier);
     }
+
+    /**
+     * <p>Subclasses must override this method to check if token contains permission.</p>
+     *
+     * @param token
+     * @param permission
+     * @return
+     */
+    public abstract boolean hasPermission(T token, Permission permission);
 
     /**
      * <p>Subclasses must override this method to extract the subject's identifier from the token.</p>

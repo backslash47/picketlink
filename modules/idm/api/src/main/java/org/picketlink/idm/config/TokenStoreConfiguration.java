@@ -72,11 +72,6 @@ public class TokenStoreConfiguration extends AbstractIdentityStoreConfiguration 
     }
 
     @Override
-    public boolean supportsPermissions() {
-        return false;
-    }
-
-    @Override
     public boolean supportsCredential() {
         return true;
     }

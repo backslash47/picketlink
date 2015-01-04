@@ -39,6 +39,9 @@ import org.picketlink.idm.model.AttributedType;
 import org.picketlink.idm.model.IdentityType;
 import org.picketlink.idm.model.Partition;
 import org.picketlink.idm.model.Relationship;
+import org.picketlink.idm.permission.IdentityPermission;
+import org.picketlink.idm.permission.Permission;
+import org.picketlink.idm.permission.acl.spi.PermissionStore;
 import org.picketlink.idm.model.annotation.IdentityStereotype;
 import org.picketlink.idm.model.annotation.RelationshipStereotype;
 import org.picketlink.idm.model.annotation.StereotypeProperty;
@@ -54,8 +57,10 @@ import org.picketlink.idm.spi.CredentialStore;
 import org.picketlink.idm.spi.IdentityContext;
 import org.picketlink.idm.spi.PartitionStore;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
@@ -70,6 +75,7 @@ import static org.picketlink.idm.spi.IdentityContext.CREDENTIALS;
     TokenCredentialHandler.class})
 public class TokenIdentityStore extends AbstractIdentityStore<TokenStoreConfiguration>
     implements CredentialStore<TokenStoreConfiguration>,
+    PermissionStore,
     PartitionStore<TokenStoreConfiguration> {
 
     private List<Consumer> tokenConsumers;
@@ -98,6 +104,82 @@ public class TokenIdentityStore extends AbstractIdentityStore<TokenStoreConfigur
     @Override
     protected void removeAttributedType(IdentityContext context, AttributedType attributedType) {
 
+    }
+
+    @Override
+    public List<Permission> listPermissions(IdentityContext ctx, Object resource) {
+        return listPermissions(ctx, resource, null);
+    }
+
+    @Override
+    public List<Permission> listPermissions(IdentityContext ctx, IdentityType identityType) {
+        return listPermissions(ctx, new IdentityPermission(null, identityType, null));
+    }
+
+    @Override
+    public List<Permission> listPermissions(IdentityContext ctx, Object resource, String operation) {
+        return listPermissions(ctx, new IdentityPermission(resource, null, operation));
+    }
+
+    @Override
+    public List<Permission> listPermissions(IdentityContext ctx, Set<Object> resources, String operation) {
+        List<Permission> perms = new ArrayList<Permission>();
+
+        for (Object resource : resources) {
+            perms.addAll(listPermissions(ctx, resource, operation));
+        }
+
+        return perms;
+    }
+
+    @Override
+    public List<Permission> listPermissions(IdentityContext ctx, Class<?> resourceClass, Serializable identifier) {
+        return listPermissions(ctx, resourceClass, identifier, null);
+    }
+
+    @Override
+    public List<Permission> listPermissions(IdentityContext ctx, Class<?> resourceClass, Serializable identifier, String operation) {
+        return listPermissions(ctx, new IdentityPermission(resourceClass, identifier, null, operation));
+    }
+
+    @Override
+    public boolean grantPermission(IdentityContext ctx, IdentityType assignee, Object resource, String operation) {
+        return true;
+    }
+
+    @Override
+    public boolean revokePermission(IdentityContext ctx, IdentityType assignee, Object resource, String operation) {
+        return true;
+    }
+
+    @Override
+    public void revokeAllPermissions(IdentityContext ctx, Object resource) {
+
+    }
+
+    public List<Permission> listPermissions(IdentityContext ctx, IdentityPermission query) {
+        Token currentToken = getCurrentToken(ctx);
+        List<Permission> result = new ArrayList<Permission>();
+
+        if (currentToken == null) {
+            return result;
+        }
+
+        Consumer consumer = getTokenConsumer(currentToken);
+        IdentityType owner = ctx.getParameter(IdentityContext.AUTHENTICATED_ACCOUNT);
+        Permission permission;
+
+        if (query.getResourceClass() != null) {
+            permission = new IdentityPermission(query.getResourceClass(), query.getResourceIdentifier(), owner, query.getOperation());
+        } else {
+            permission = new IdentityPermission(query.getResource(), owner, query.getOperation());
+        }
+
+        if (consumer.hasPermission(currentToken, permission)) {
+            result.add(permission);
+        }
+
+        return result;
     }
 
     @Override
