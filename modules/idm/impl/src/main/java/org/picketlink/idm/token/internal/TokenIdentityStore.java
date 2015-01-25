@@ -193,6 +193,11 @@ public class TokenIdentityStore extends AbstractIdentityStore<TokenStoreConfigur
         }
 
         Token currentToken = getCurrentToken(context);
+
+        if (currentToken == null) {
+            return unmodifiableList(identityTypes);
+        }
+
         IdentityType identityType = null;
 
         for (Condition condition : query.getConditions()) {
@@ -380,25 +385,13 @@ public class TokenIdentityStore extends AbstractIdentityStore<TokenStoreConfigur
     }
 
     private Token getCurrentToken(IdentityContext context) {
-        TokenCredential tokenCredential = getAuthenticatedAccountCredentials(context);
+        Object credentials = context.getParameter(CREDENTIALS);
 
-        return tokenCredential.getToken();
-    }
-
-    private TokenCredential getAuthenticatedAccountCredentials(IdentityContext context) {
-        TokenCredential tokenCredential;
-
-        try {
-            tokenCredential = context.getParameter(CREDENTIALS);
-        } catch (ClassCastException cce) {
-            throw new IdentityManagementException("ContextParameter [" + CREDENTIALS + " does not reference a TokenCredential type instance.");
+        if (credentials instanceof TokenCredential) {
+            return ((TokenCredential)credentials).getToken();
+        } else {
+            return null;
         }
-
-        if (tokenCredential == null) {
-            throw new IdentityManagementException("No TokenCredential found in the invocation context. Make sure you have a ContextInitializer which sets it.");
-        }
-
-        return tokenCredential;
     }
 
     /**
