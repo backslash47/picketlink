@@ -265,6 +265,10 @@ public class TokenIdentityStore extends AbstractIdentityStore<TokenStoreConfigur
         V relationshipInstance = null;
 
         for (QueryParameter queryParameter : query.getParameters().keySet()) {
+            if (!(queryParameter instanceof RelationshipQueryParameter)) {
+                continue;
+            }
+
             String queryParameterName = ((RelationshipQueryParameter) queryParameter).getName();
             Property<Object> nameProperty = PropertyQueries
                 .createQuery(relationshipType)
